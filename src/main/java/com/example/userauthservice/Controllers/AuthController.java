@@ -5,6 +5,8 @@ import com.example.userauthservice.Exceptions.UserAlreadyExistException;
 import com.example.userauthservice.Services.AuthService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -40,12 +42,13 @@ public class AuthController {
         try {
             String token = authService.login(loginRequestDto.getEmail(),loginRequestDto.getPassword());
             responseDto.setResponseStatus(ResponseStatus.SUCCESS);
+            MultiValueMap<String ,String> headers  = new LinkedMultiValueMap<>();
+            headers.add("Auth Token",token);
+            return new ResponseEntity<>(responseDto,headers,HttpStatus.OK);
         }catch (Exception e){
             responseDto.setResponseStatus(ResponseStatus.FAILURE);
+            return  new ResponseEntity<>(responseDto,null,HttpStatus.CONFLICT);
         }
-        return new ResponseEntity<>(responseDto,HttpStatus.ACCEPTED);
-
-
     }
 
 }

@@ -5,14 +5,18 @@ import com.example.userauthservice.Exceptions.UserAlreadyExistException;
 import com.example.userauthservice.Exceptions.UserNotFoundException;
 import com.example.userauthservice.Repositories.UserRepository;
 import com.example.userauthservice.models.User;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
+import java.security.Key;
+import java.util.*;
 
 @Service
 public class AuthService {
-
+    Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
     private UserRepository userRepository;
     private BCryptPasswordEncoder bCryptPasswordEncoder;
 
@@ -41,10 +45,43 @@ public class AuthService {
        boolean passwordCheck = bCryptPasswordEncoder.matches(password,user.get().getPassword());
         boolean emailCheck = user.get().getEmail().equals(email);
         if(passwordCheck&&emailCheck){
-            return "token";
+            String token = createJwtToken(user.get().getId(), new ArrayList<>(),user.get().getEmail());
+            return token;
         }
         throw new InvalidCrendentialsException("invalid credentials");
     }
+
+    public String createJwtToken(Long userID, ArrayList<String> roles, String email){
+        Map<String , Object> dataJwt = new HashMap<>();
+
+        dataJwt.put("userId",userID);
+        dataJwt.put("roles",roles);
+        dataJwt.put("email",email);
+
+        String jwtToken = Jwts.builder()
+                .setExpiration(new Date(System.currentTimeMillis() + 3600000)) // Expiration time (1 hour)
+                .setClaims(dataJwt) // Custom claims (e.g., user role)
+                .signWith(key) // Sign with the secret key
+                .compact(); // Build the JWT
+
+        return jwtToken;
+    }
+
+    public boolean validateToken(String token){
+        try {
+            var claims = Jwts.parserBuilder()
+                    .setSigningKey(key) // Use the same secret key
+                    .build()
+                    .parseClaimsJws(token); // Parse the token
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
+
+
+    }
+
+
 
 
 }
