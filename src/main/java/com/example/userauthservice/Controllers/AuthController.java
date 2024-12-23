@@ -2,6 +2,7 @@ package com.example.userauthservice.Controllers;
 
 import com.example.userauthservice.Dtos.*;
 import com.example.userauthservice.Exceptions.UserAlreadyExistException;
+import com.example.userauthservice.Exceptions.UserNotFoundException;
 import com.example.userauthservice.Services.AuthService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,17 +38,20 @@ public class AuthController {
 
     }
     @PostMapping("/login")
-    public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto loginRequestDto){
+    public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto loginRequestDto) {
         LoginResponseDto responseDto = new LoginResponseDto();
         try {
-            String token = authService.login(loginRequestDto.getEmail(),loginRequestDto.getPassword());
+            String token = authService.login(loginRequestDto.getEmail(), loginRequestDto.getPassword());
             responseDto.setResponseStatus(ResponseStatus.SUCCESS);
-            MultiValueMap<String ,String> headers  = new LinkedMultiValueMap<>();
-            headers.add("Auth Token",token);
-            return new ResponseEntity<>(responseDto,headers,HttpStatus.OK);
-        }catch (Exception e){
+            MultiValueMap<String, String> headers = new LinkedMultiValueMap<>();
+            headers.add("Auth Token", token);
+            return new ResponseEntity<>(responseDto, headers, HttpStatus.OK);
+        } catch (UserNotFoundException e) {
             responseDto.setResponseStatus(ResponseStatus.FAILURE);
-            return  new ResponseEntity<>(responseDto,null,HttpStatus.CONFLICT);
+            return new ResponseEntity<>(responseDto, HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            responseDto.setResponseStatus(ResponseStatus.FAILURE);
+            return new ResponseEntity<>(responseDto, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
